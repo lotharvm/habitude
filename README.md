@@ -24,4 +24,3 @@ Habitude is a React Native (Expo) app for iOS that helps users track daily habit
 - **Expo Router** for navigation
 - **Zustand** for state management
 - **AsyncStorage** for local data persistence
-- Key UI library: `react-native-draggable-flatlist`
