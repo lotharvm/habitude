@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router"; // Removed useLocalSearchParams
-import React, { useEffect } from "react"; // useEffect for reset on unmount
+import React from "react";
 import {
   FlatList,
   Platform,
@@ -46,16 +46,6 @@ export default function CreateListModal() {
     saveCurrentList,
     resetCreateListState,
   } = useListCreationStore();
-
-  // Reset store on modal unmount/dismiss if not saved
-  useEffect(() => {
-    return () => {
-      // This cleanup runs when the component unmounts.
-      // We might want to be more specific if reset should only happen on explicit cancel.
-      // For now, let's assume any unmount without saving means reset.
-      // However, after a successful saveCurrentList, the store already resets itself.
-    };
-  }, [resetCreateListState]);
 
   const handleSavePress = async () => {
     const success = await saveCurrentList();
@@ -149,17 +139,12 @@ export default function CreateListModal() {
           </ThemedText>
           <DraggableFlatList
             data={currentItems} // From store
-            onDragEnd={({ data }) => setHabitsForSection(data, sectionKey)} // Action from store
+            onDragEnd={({ data }) => setHabitsForSection(data, sectionKey)}
             keyExtractor={(habit) => habit.id}
             renderItem={renderDraggableHabitItem}
             scrollEnabled={false}
-            containerStyle={{ minHeight: currentItems.length > 0 ? 0 : 60 }}
+            // containerStyle={{ minHeight: currentItems.length > 0 ? 0 : 60 }}
           />
-          {currentItems.length === 0 && (
-            <ThemedText style={styles.emptySectionText}>
-              No habits yet for {sectionNameForDisplay.toLowerCase()}.
-            </ThemedText>
-          )}
           <TouchableOpacity
             onPress={() => navigateToSelectHabit(sectionNameForDisplay)}
             style={styles.addActivityButton}
@@ -167,7 +152,7 @@ export default function CreateListModal() {
             <IconSymbol name="plus" size={16} color="#007AFF" />
             <ThemedText style={styles.addActivityButtonText}>
               {" "}
-              Add Activity
+              Add a solitude habit
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -221,9 +206,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: Platform.OS === "ios" ? 50 : 20,
-    paddingBottom: 10,
+    paddingHorizontal: 10,
+    paddingTop: Platform.OS === "ios" ? 8 : 20,
+    paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
   },

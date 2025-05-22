@@ -64,7 +64,7 @@ export default function ListsScreen() {
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>
-          Your Lists
+          Your lists
         </ThemedText>
         <Link href="/create-list" asChild>
           <TouchableOpacity style={styles.addButton}>
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
+    marginTop: 40,
     marginBottom: 20,
   },
   title: {

@@ -180,7 +180,7 @@ export default function SelectHabitModal() {
           <ThemedText style={styles.headerButtonText}>Back</ThemedText>
         </TouchableOpacity>
         <ThemedText type="title" style={styles.modalTitle}>
-          Manage & Select Habit
+          Solitude habits
         </ThemedText>
         <View style={{ width: 60 }} />
       </View>
@@ -246,9 +246,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: Platform.OS === "ios" ? 50 : 20,
-    paddingBottom: 10,
+    paddingHorizontal: 10,
+    paddingTop: Platform.OS === "ios" ? 8 : 20,
+    paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
   },
