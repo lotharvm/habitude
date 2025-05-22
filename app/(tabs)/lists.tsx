@@ -2,15 +2,17 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol"; // Assuming this is your icon component
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Link, useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   FlatList,
   Platform,
+  Pressable,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useListCreationStore } from "../../store/listCreationStore"; // Import the store
 
 const LISTS_STORAGE_KEY = "habitude_lists";
 
@@ -31,15 +33,22 @@ export interface HabitList {
 
 export default function ListsScreen() {
   const [lists, setLists] = useState<HabitList[]>([]);
+  const router = useRouter();
+  // Get store actions directly, no need for getState() if only calling actions
+  const { initializeForEdit, prepareForCreateNew } =
+    useListCreationStore.getState();
 
   const loadLists = async () => {
     try {
       const storedLists = await AsyncStorage.getItem(LISTS_STORAGE_KEY);
       if (storedLists) {
         setLists(JSON.parse(storedLists));
+      } else {
+        setLists([]);
       }
     } catch (e) {
       console.error("Failed to load lists.", e);
+      setLists([]);
     }
   };
 
@@ -50,14 +59,33 @@ export default function ListsScreen() {
     }, [])
   );
 
+  const handleEditList = (list: HabitList) => {
+    initializeForEdit(list); // Prepare store for editing
+    router.push("/create-list"); // Navigate without params
+  };
+
+  const handleCreateNewList = () => {
+    prepareForCreateNew(); // Prepare store for new list creation
+    router.push("/create-list"); // Navigate without params
+  };
+
   const renderItem = ({ item }: { item: HabitList }) => (
-    <ThemedView style={styles.listItemContainer}>
-      <ThemedText style={styles.listItemTitle}>{item.name}</ThemedText>
-      <ThemedText style={styles.listItemSubtitle}>
-        M: {item.morning.length}, A: {item.afternoon.length}, E:{" "}
-        {item.evening.length}
-      </ThemedText>
-    </ThemedView>
+    <Pressable
+      onPress={() => handleEditList(item)}
+      style={({ pressed }) => [
+        styles.listItemContainer,
+        pressed && styles.listItemPressed,
+      ]}
+    >
+      <View style={styles.listItemTextContainer}>
+        <ThemedText style={styles.listItemTitle}>{item.name}</ThemedText>
+        <ThemedText style={styles.listItemSubtitle}>
+          M: {item.morning.length}, A: {item.afternoon.length}, E:{" "}
+          {item.evening.length}
+        </ThemedText>
+      </View>
+      <IconSymbol name="chevron.right" size={20} color="#C7C7CC" />
+    </Pressable>
   );
 
   return (
@@ -66,11 +94,12 @@ export default function ListsScreen() {
         <ThemedText type="title" style={styles.title}>
           Your lists
         </ThemedText>
-        <Link href="/create-list" asChild>
-          <TouchableOpacity style={styles.addButton}>
-            <IconSymbol name="plus.circle.fill" size={30} color="#007AFF" />
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          onPress={handleCreateNewList}
+          style={styles.addButton}
+        >
+          <IconSymbol name="plus.circle.fill" size={30} color="#007AFF" />
+        </TouchableOpacity>
       </View>
       {lists.length === 0 ? (
         <ThemedView style={styles.emptyContainer}>
@@ -113,35 +142,43 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: 16,
     color: "#888",
+    textAlign: "center",
   },
   listContentContainer: {
     paddingHorizontal: 20,
   },
   listItemContainer: {
-    padding: 15,
+    paddingVertical: 18,
+    paddingHorizontal: 15,
     borderRadius: 10,
-    marginBottom: 10,
-    // ThemedView will handle background color based on theme
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2, // For Android
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  listItemPressed: {
+    opacity: 0.8,
+  },
+  listItemTextContainer: {
+    flex: 1,
   },
   listItemTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    marginBottom: 3,
   },
   listItemSubtitle: {
     fontSize: 14,
     color: "#666",
-    marginTop: 4,
   },
 });

@@ -1,6 +1,10 @@
-import { useRouter } from "expo-router"; // Removed useLocalSearchParams
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
+  Alert,
   FlatList,
   Platform,
   StyleSheet,
@@ -8,10 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-// AsyncStorage and uuidv4 are now handled by the store for saving
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import DraggableFlatList, {
   RenderItemParams,
   ScaleDecorator,
@@ -20,11 +20,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   ListCreationSection,
   useListCreationStore,
-} from "../store/listCreationStore"; // Corrected path
+} from "../store/listCreationStore";
 import { HabitItem } from "./(tabs)/lists";
 
-// Define types for the main FlatList data items
-type ListItemType = "input" | "section";
+type ListItemType = "input" | "section" | "deleteButton";
 interface ScreenListItem {
   id: string;
   type: ListItemType;
@@ -34,25 +33,23 @@ interface ScreenListItem {
 export default function CreateListModal() {
   const router = useRouter();
 
-  // Get state and actions from Zustand store
   const {
     listName,
     morningItems,
     afternoonItems,
     eveningItems,
+    editingListId,
     setListName,
-    // addHabitToSection is now handled by select-habit modal directly calling store
     setHabitsForSection,
     saveCurrentList,
     resetCreateListState,
+    deleteList,
   } = useListCreationStore();
 
   const handleSavePress = async () => {
     const success = await saveCurrentList();
     if (success) {
       router.back();
-    } else {
-      // Alert is already shown by the store, but you could add more specific UI feedback here
     }
   };
 
@@ -61,11 +58,31 @@ export default function CreateListModal() {
     router.back();
   };
 
+  const handleDeletePress = () => {
+    if (editingListId) {
+      Alert.alert(
+        "Delete List",
+        "Are you sure you want to delete this list? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              const success = await deleteList(editingListId);
+              if (success) {
+                router.back();
+              }
+            },
+          },
+        ]
+      );
+    }
+  };
+
   const navigateToSelectHabit = (
     sectionTarget: "Morning" | "Afternoon" | "Evening"
   ) => {
-    // Pass the target section name to the select-habit modal
-    // The select-habit modal will then use this to call the store's addHabitToSection
     router.push({
       pathname: "/select-habit",
       params: { targetSection: sectionTarget.toLowerCase() },
@@ -76,22 +93,20 @@ export default function CreateListModal() {
     item,
     drag,
     isActive,
-  }: RenderItemParams<HabitItem>) => {
-    return (
-      <ScaleDecorator>
-        <TouchableOpacity
-          onLongPress={drag}
-          disabled={isActive}
-          style={[styles.draggableItem, isActive && styles.draggableItemActive]}
-        >
-          <ThemedText style={styles.draggableItemText}>
-            {item.emoji} {item.name}
-          </ThemedText>
-          <IconSymbol name="line.3.horizontal" size={20} color="#888" />
-        </TouchableOpacity>
-      </ScaleDecorator>
-    );
-  };
+  }: RenderItemParams<HabitItem>) => (
+    <ScaleDecorator>
+      <TouchableOpacity
+        onLongPress={drag}
+        disabled={isActive}
+        style={[styles.draggableItem, isActive && styles.draggableItemActive]}
+      >
+        <ThemedText style={styles.draggableItemText}>
+          {item.emoji} {item.name}
+        </ThemedText>
+        <IconSymbol name="line.3.horizontal" size={20} color="#888" />
+      </TouchableOpacity>
+    </ScaleDecorator>
+  );
 
   const screenListData: ScreenListItem[] = [
     { id: "listNameInput", type: "input" },
@@ -99,15 +114,22 @@ export default function CreateListModal() {
     { id: "afternoonSection", type: "section", sectionName: "Afternoon" },
     { id: "eveningSection", type: "section", sectionName: "Evening" },
   ];
+  if (editingListId) {
+    screenListData.push({ id: "deleteBtn", type: "deleteButton" });
+  }
 
   const renderScreenItem = ({ item }: { item: ScreenListItem }) => {
     if (item.type === "input") {
       return (
         <TextInput
           style={styles.input}
-          placeholder="List Name (e.g., Productive Day)"
-          value={listName} // From store
-          onChangeText={setListName} // Action from store
+          placeholder={
+            editingListId
+              ? "Edit List Name"
+              : "List Name (e.g., Productive Day)"
+          }
+          value={listName}
+          onChangeText={setListName}
           placeholderTextColor="#888"
         />
       );
@@ -115,8 +137,7 @@ export default function CreateListModal() {
 
     if (item.type === "section" && item.sectionName) {
       let currentItems: HabitItem[] = [];
-      let sectionKey: ListCreationSection = "morning"; // Default, will be updated
-
+      let sectionKey: ListCreationSection = "morning";
       if (item.sectionName === "Morning") {
         currentItems = morningItems;
         sectionKey = "morning";
@@ -129,21 +150,18 @@ export default function CreateListModal() {
         currentItems = eveningItems;
         sectionKey = "evening";
       }
-
       const sectionNameForDisplay = item.sectionName;
-
       return (
         <View style={styles.sectionContainer}>
           <ThemedText style={styles.sectionTitle}>
             {sectionNameForDisplay}
           </ThemedText>
           <DraggableFlatList
-            data={currentItems} // From store
+            data={currentItems}
             onDragEnd={({ data }) => setHabitsForSection(data, sectionKey)}
             keyExtractor={(habit) => habit.id}
             renderItem={renderDraggableHabitItem}
             scrollEnabled={false}
-            // containerStyle={{ minHeight: currentItems.length > 0 ? 0 : 60 }}
           />
           <TouchableOpacity
             onPress={() => navigateToSelectHabit(sectionNameForDisplay)}
@@ -156,6 +174,18 @@ export default function CreateListModal() {
             </ThemedText>
           </TouchableOpacity>
         </View>
+      );
+    }
+
+    if (item.type === "deleteButton") {
+      return (
+        <TouchableOpacity
+          onPress={handleDeletePress}
+          style={styles.deleteButton}
+        >
+          <IconSymbol name="trash.fill" size={18} color="#FF3B30" />
+          <ThemedText style={styles.deleteButtonText}>Delete List</ThemedText>
+        </TouchableOpacity>
       );
     }
     return null;
@@ -172,7 +202,7 @@ export default function CreateListModal() {
             <ThemedText style={styles.headerButtonText}>Cancel</ThemedText>
           </TouchableOpacity>
           <ThemedText type="title" style={styles.modalTitle}>
-            Create List
+            {editingListId ? "Edit List" : "Create List"}
           </ThemedText>
           <TouchableOpacity
             onPress={handleSavePress}
@@ -192,6 +222,9 @@ export default function CreateListModal() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContentContainer}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            <View style={{ height: editingListId ? 30 : 0 }} />
+          }
         />
       </ThemedView>
     </GestureHandlerRootView>
@@ -217,7 +250,7 @@ const styles = StyleSheet.create({
   headerButtonText: { fontSize: 16, color: "#007AFF" },
   saveButtonText: { fontWeight: "bold" },
   listContentContainer: {
-    paddingBottom: 50,
+    paddingBottom: 20,
   },
   input: {
     height: 50,
@@ -229,8 +262,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
     fontSize: 16,
-    // If using ThemedInput, provide theme-aware colors or remove backgroundColor
-    // backgroundColor: '#FFFFFF',
   },
   sectionContainer: {
     marginHorizontal: 20,
@@ -242,7 +273,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2.0,
     elevation: 1,
-    // backgroundColor should come from ThemedView or be managed by theme
   },
   sectionTitle: {
     fontSize: 20,
@@ -273,7 +303,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 5,
     marginBottom: 5,
-    backgroundColor: "#FFFFFF", // Ensure contrast if ThemedView parent is dark
+    backgroundColor: "#FFFFFF",
   },
   draggableItemActive: {
     backgroundColor: "#F8F8F8",
@@ -290,5 +320,22 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     fontStyle: "italic",
     minHeight: 20,
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FF3B301A",
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    color: "#FF3B30",
+    marginLeft: 8,
+    fontWeight: "bold",
   },
 });
