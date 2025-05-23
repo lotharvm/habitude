@@ -25,6 +25,11 @@ const MAPPING = {
   "list.bullet.clipboard": "list-alt",
   "pencil.and.list.clipboard": "playlist-add-check",
   "plus.circle.fill": "add-circle",
+  checkmark: "check",
+  xmark: "close",
+  plus: "add",
+  "line.3.horizontal": "drag-handle",
+  "trash.fill": "delete",
 } as IconMapping;
 
 /**

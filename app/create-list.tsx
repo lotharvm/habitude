@@ -170,7 +170,7 @@ export default function CreateListModal() {
             <IconSymbol name="plus" size={16} color="#007AFF" />
             <ThemedText style={styles.addActivityButtonText}>
               {" "}
-              Add a solitude habit
+              Add a habit
             </ThemedText>
           </TouchableOpacity>
         </View>
