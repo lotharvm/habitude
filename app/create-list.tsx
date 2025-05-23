@@ -89,24 +89,49 @@ export default function CreateListModal() {
     });
   };
 
-  const renderDraggableHabitItem = ({
-    item,
-    drag,
-    isActive,
-  }: RenderItemParams<HabitItem>) => (
-    <ScaleDecorator>
-      <TouchableOpacity
-        onLongPress={drag}
-        disabled={isActive}
-        style={[styles.draggableItem, isActive && styles.draggableItemActive]}
-      >
-        <ThemedText style={styles.draggableItemText}>
-          {item.emoji} {item.name}
-        </ThemedText>
-        <IconSymbol name="line.3.horizontal" size={20} color="#888" />
-      </TouchableOpacity>
-    </ScaleDecorator>
-  );
+  const removeHabitFromSection = (
+    habitId: string,
+    section: ListCreationSection
+  ) => {
+    let currentItems: HabitItem[] = [];
+    if (section === "morning") currentItems = morningItems;
+    if (section === "afternoon") currentItems = afternoonItems;
+    if (section === "evening") currentItems = eveningItems;
+
+    const updatedItems = currentItems.filter((item) => item.id !== habitId);
+    setHabitsForSection(updatedItems, section);
+  };
+
+  const renderDraggableHabitItem = (sectionKey: ListCreationSection) => {
+    const DraggableHabitItem = ({
+      item,
+      drag,
+      isActive,
+    }: RenderItemParams<HabitItem>) => (
+      <ScaleDecorator>
+        <TouchableOpacity
+          onLongPress={drag}
+          disabled={isActive}
+          style={[styles.draggableItem, isActive && styles.draggableItemActive]}
+        >
+          <ThemedText style={styles.draggableItemText}>
+            {item.emoji} {item.name}
+          </ThemedText>
+          <View style={styles.habitActions}>
+            <TouchableOpacity
+              onPress={() => removeHabitFromSection(item.id, sectionKey)}
+              style={styles.removeHabitButton}
+            >
+              <IconSymbol name="minus.circle.fill" size={20} color="#FF3B30" />
+            </TouchableOpacity>
+            <IconSymbol name="line.3.horizontal" size={20} color="#888" />
+          </View>
+        </TouchableOpacity>
+      </ScaleDecorator>
+    );
+
+    return DraggableHabitItem;
+  };
 
   const screenListData: ScreenListItem[] = [
     { id: "listNameInput", type: "input" },
@@ -160,7 +185,7 @@ export default function CreateListModal() {
             data={currentItems}
             onDragEnd={({ data }) => setHabitsForSection(data, sectionKey)}
             keyExtractor={(habit) => habit.id}
-            renderItem={renderDraggableHabitItem}
+            renderItem={renderDraggableHabitItem(sectionKey)}
             scrollEnabled={false}
           />
           <TouchableOpacity
@@ -320,6 +345,14 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     fontStyle: "italic",
     minHeight: 20,
+  },
+  habitActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  removeHabitButton: {
+    padding: 5,
+    marginRight: 8,
   },
   deleteButton: {
     flexDirection: "row",

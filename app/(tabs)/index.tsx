@@ -15,12 +15,7 @@ import { HabitItem } from "./lists";
 
 export default function TodayScreen() {
   const router = useRouter();
-  const {
-    scheduleItems,
-    availableLists,
-    loadScheduleAndLists,
-    getTodaysAssignment,
-  } = useScheduleStore();
+  const { loadScheduleAndLists, getTodaysAssignment } = useScheduleStore();
 
   // Load data when screen comes into focus
   useFocusEffect(
@@ -62,23 +57,33 @@ export default function TodayScreen() {
     router.push("/(tabs)/schedule");
   };
 
+  const dateObj = new Date();
+
+  const options = {
+    day: "numeric",
+    month: "long",
+    year: undefined,
+  } as Intl.DateTimeFormatOptions;
+
+  const formatter = new Intl.DateTimeFormat("en-US", options);
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>
-          Today
+          Today's solitude
         </ThemedText>
         <ThemedText style={styles.dayText}>
-          {today ? today.charAt(0).toUpperCase() + today.slice(1) : "Unknown"}
+          {today.charAt(0).toUpperCase() + today.slice(1)},{" "}
+          {formatter.format(dateObj)}
+          {/* {today
+            ? today.charAt(0).toUpperCase() + today.slice(1)
+            : "Unknown"}, {formatter.format(dateObj)} */}
         </ThemedText>
       </View>
 
       {todaysList ? (
         <View style={styles.listContainer}>
-          <View style={styles.listHeader}>
-            <ThemedText style={styles.listName}>{todaysList.name}</ThemedText>
-          </View>
-
           <View style={styles.sectionsContainer}>
             {renderSection("Morning", todaysList.morning || [])}
             {renderSection("Afternoon", todaysList.afternoon || [])}

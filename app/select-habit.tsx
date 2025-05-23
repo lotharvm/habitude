@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  Keyboard,
   Platform,
   StyleSheet,
   TextInput,
@@ -14,15 +15,16 @@ import {
   View,
 } from "react-native";
 import "react-native-get-random-values";
+import EmojiPicker, { type EmojiType } from "rn-emoji-keyboard";
 import { v4 as uuidv4 } from "uuid";
 import { HabitItem } from "./(tabs)/lists";
-// Import the store and section type
+
 import {
   ListCreationSection,
   useListCreationStore,
-} from "../store/listCreationStore"; // Corrected path
+} from "../store/listCreationStore";
 
-const HABIT_LIBRARY_STORAGE_KEY = "habitude_habit_library"; // Renamed for clarity
+const HABIT_LIBRARY_STORAGE_KEY = "habitude_habit_library";
 
 const INITIAL_HABITS: HabitItem[] = [
   { id: uuidv4(), name: "Walking", emoji: "🚶" },
@@ -49,7 +51,8 @@ export default function SelectHabitModal() {
   const [availableHabits, setAvailableHabits] = useState<HabitItem[]>([]);
   const [isEditing, setIsEditing] = useState<HabitItem | null>(null);
   const [newHabitName, setNewHabitName] = useState("");
-  const [newHabitEmoji, setNewHabitEmoji] = useState("");
+  const [newHabitEmoji, setNewHabitEmoji] = useState("✏️");
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   const loadHabits = async () => {
     try {
@@ -95,6 +98,11 @@ export default function SelectHabitModal() {
     }
   };
 
+  const handleEmojiSelected = (emojiObject: EmojiType) => {
+    setNewHabitEmoji(emojiObject.emoji);
+    setIsEmojiPickerOpen(false);
+  };
+
   const handleAddOrUpdateHabitInLibrary = () => {
     if (!newHabitName.trim() || newHabitEmoji.length === 0) {
       Alert.alert(
@@ -120,8 +128,9 @@ export default function SelectHabitModal() {
     }
     saveHabitLibrary(updatedHabits);
     setNewHabitName("");
-    setNewHabitEmoji("");
+    setNewHabitEmoji("✏️");
     setIsEditing(null);
+    Keyboard.dismiss();
   };
 
   const startEditHabit = (habit: HabitItem) => {
@@ -193,14 +202,16 @@ export default function SelectHabitModal() {
           onChangeText={setNewHabitName}
           placeholderTextColor="#888"
         />
-        <TextInput
-          style={[styles.input, styles.emojiInput]}
-          placeholder="✏️"
-          value={newHabitEmoji}
-          onChangeText={setNewHabitEmoji}
-          maxLength={Platform.OS === "ios" ? 2 : 1}
-          placeholderTextColor="#888"
-        />
+        <View style={styles.emojiPickerContainer}>
+          <TouchableOpacity
+            onPress={() => setIsEmojiPickerOpen(true)}
+            style={styles.emojiButton}
+          >
+            <ThemedText style={styles.emojiButtonText}>
+              {newHabitEmoji}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
           onPress={handleAddOrUpdateHabitInLibrary}
           style={styles.addButton}
@@ -214,7 +225,7 @@ export default function SelectHabitModal() {
             onPress={() => {
               setIsEditing(null);
               setNewHabitName("");
-              setNewHabitEmoji("");
+              setNewHabitEmoji("✏️");
             }}
             style={styles.cancelEditButton}
           >
@@ -233,6 +244,12 @@ export default function SelectHabitModal() {
             No habits in library. Add some!
           </ThemedText>
         }
+      />
+
+      <EmojiPicker
+        onEmojiSelected={handleEmojiSelected}
+        open={isEmojiPickerOpen}
+        onClose={() => setIsEmojiPickerOpen(false)}
       />
     </ThemedView>
   );
@@ -282,9 +299,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     backgroundColor: "#FFFFFF",
   },
-  emojiInput: {
+  emojiPickerContainer: {
     flex: 0.3,
-    textAlign: "center",
+    marginRight: 8,
+  },
+  emojiButton: {
+    height: 40,
+    borderColor: "#CCC",
+    borderWidth: 1,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  emojiButtonText: {
+    fontSize: 18,
   },
   addButton: {
     backgroundColor: "#007AFF",

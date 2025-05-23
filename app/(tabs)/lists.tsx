@@ -69,24 +69,38 @@ export default function ListsScreen() {
     router.push("/create-list"); // Navigate without params
   };
 
-  const renderItem = ({ item }: { item: HabitList }) => (
-    <Pressable
-      onPress={() => handleEditList(item)}
-      style={({ pressed }) => [
-        styles.listItemContainer,
-        pressed && styles.listItemPressed,
-      ]}
-    >
-      <View style={styles.listItemTextContainer}>
-        <ThemedText style={styles.listItemTitle}>{item.name}</ThemedText>
-        <ThemedText style={styles.listItemSubtitle}>
-          M: {item.morning.length}, A: {item.afternoon.length}, E:{" "}
-          {item.evening.length}
-        </ThemedText>
-      </View>
-      <IconSymbol name="chevron.right" size={20} color="#C7C7CC" />
-    </Pressable>
-  );
+  const renderItem = ({ item }: { item: HabitList }) => {
+    // Combine all habits from all sections
+    const allHabits = [
+      ...(item.morning || []),
+      ...(item.afternoon || []),
+      ...(item.evening || []),
+    ];
+
+    // Create a display string of habit names
+    const habitNames =
+      allHabits.length > 0
+        ? allHabits.map((habit) => habit.name).join(", ")
+        : "No habits";
+
+    return (
+      <Pressable
+        onPress={() => handleEditList(item)}
+        style={({ pressed }) => [
+          styles.listItemContainer,
+          pressed && styles.listItemPressed,
+        ]}
+      >
+        <View style={styles.listItemTextContainer}>
+          <ThemedText style={styles.listItemTitle}>{item.name}</ThemedText>
+          <ThemedText style={styles.listItemSubtitle} numberOfLines={2}>
+            {habitNames}
+          </ThemedText>
+        </View>
+        <IconSymbol name="chevron.right" size={20} color="#C7C7CC" />
+      </Pressable>
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>

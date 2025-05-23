@@ -97,27 +97,14 @@ export default function ScheduleScreen() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>
-            Weekly Schedule
-          </ThemedText>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ThemedText>Loading...</ThemedText>
-        </View>
-      </ThemedView>
-    );
-  }
+  console.log({ isLoading });
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
         <View style={styles.header}>
           <ThemedText type="title" style={styles.title}>
-            Weekly Schedule
+            Schedule
           </ThemedText>
         </View>
 
